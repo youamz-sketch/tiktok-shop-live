@@ -1,5 +1,11 @@
+// pages/overlay.js
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
+
+// === Personnalisation rapide ===
+const brandText = 'Live TikTok Shop'; // <- ton texte stylisé
+const primary = '#ff2a55'; // rose néon
+const secondary = '#2ad1ff'; // bleu néon
 
 function useCountdown(startAt, endAt) {
   const [now, setNow] = useState(Date.now());
@@ -21,7 +27,6 @@ export default function Overlay() {
 
   useEffect(() => {
     if (!id) return;
-    // poll simple (toutes les 2s) — suffisant V0
     const load = async () => {
       const { data, error } = await supabase.from('sessions').select('*').eq('id', id).single();
       if (!error) setSession(data);
@@ -34,40 +39,75 @@ export default function Overlay() {
   const { m, sec } = useCountdown(session?.start_at, session?.end_at);
 
   const banner = useMemo(() => {
-    return `- ${discount}% aujourd’hui seulement — CLIQUE ICI`;
+    return `-${discount}% aujourd’hui seulement — CLIQUE ICI`;
   }, [discount]);
 
-  // Styles overlay full-screen transparent
   return (
     <div style={{
-      width: '100vw', height: '100vh', overflow: 'hidden',
-      background: 'transparent', position: 'relative', fontFamily: 'system-ui'
+      width: '100vw', height: '100vh', background: 'transparent',
+      position: 'relative', overflow: 'hidden', fontFamily: 'system-ui'
     }}>
-      {/* Bandeau haut */}
+      {/* --- Badge texte stylisé (pas de logo) --- */}
+      <div
+        style={{
+          position: 'absolute', top: 20, left: 20, padding: '8px 14px',
+          borderRadius: 14, background: 'rgba(0,0,0,0.55)', border: '1px solid rgba(255,255,255,0.12)',
+          boxShadow: `0 0 14px ${primary}55, 0 0 28px ${secondary}40, inset 0 0 10px rgba(255,255,255,0.06)`
+        }}
+      >
+        <span
+          style={{
+            fontWeight: 800, letterSpacing: 0.4,
+            backgroundImage: `linear-gradient(90deg, ${primary}, ${secondary})`,
+            WebkitBackgroundClip: 'text',
+            backgroundClip: 'text',
+            color: 'transparent',
+            textShadow: `0 0 12px ${primary}66, 0 0 18px ${secondary}55`,
+            filter: 'drop-shadow(0 0 4px rgba(0,0,0,.6))'
+          }}
+        >
+          {brandText}
+        </span>
+      </div>
+
+      {/* Bandeau promo top center */}
       <div style={{
         position: 'absolute', top: 20, left: '50%', transform: 'translateX(-50%)',
-        padding: '10px 18px', background: '#111', color: 'white', borderRadius: 12, border: '1px solid #444'
+        padding: '10px 18px', background: 'rgba(17,17,17,0.85)',
+        color: 'white', borderRadius: 12, border: '1px solid rgba(255,255,255,0.12)',
+        backdropFilter: 'blur(6px)'
       }}>
         {banner}
       </div>
 
-      {/* Timer bas droit */}
+      {/* Timer bottom-right (pulse) */}
       <div style={{
         position: 'absolute', right: 20, bottom: 20, padding: '12px 18px',
-        background: '#c1121f', color: 'white', borderRadius: 12, fontSize: 28, fontWeight: 700
+        background: primary, color: 'white', borderRadius: 12,
+        fontSize: 28, fontWeight: 800, animation: 'pulse 1s infinite'
       }}>
         ⏳ {String(m).padStart(2,'0')}:{String(sec).padStart(2,'0')}
       </div>
 
-      {/* Bouton CTA bas gauche */}
+      {/* CTA bottom-left */}
       {cta && (
         <a href={cta} target="_blank" rel="noreferrer" style={{
           position: 'absolute', left: 20, bottom: 20, padding: '12px 18px',
-          background: '#0ea5e9', color: 'white', borderRadius: 12, fontSize: 18, textDecoration: 'none'
+          background: secondary, color: '#001018', borderRadius: 12, fontSize: 18,
+          textDecoration: 'none', fontWeight: 700, border: '1px solid rgba(0,0,0,.2)'
         }}>
           👉 J’en profite
         </a>
       )}
+
+      {/* keyframes (injection CSS minimale) */}
+      <style jsx global>{`
+        @keyframes pulse {
+          0% { transform: scale(1); box-shadow: 0 0 0 0 ${primary}66; }
+          70% { transform: scale(1.03); box-shadow: 0 0 25px 10px ${primary}00; }
+          100% { transform: scale(1); box-shadow: 0 0 0 0 ${primary}00; }
+        }
+      `}</style>
     </div>
   );
 }
